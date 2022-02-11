@@ -163,7 +163,29 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		return result;
 	}
 
-	private async getLastCommitId() {
+	private async createBranch(branchName: string, startCommit: string) {
+		const bitbucketApiAuthHeader = {
+			auth: {
+				username: this.authentication.user,
+				password: this.authentication.password
+			}
+		};
+		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching list of branches in repository');
+		let request = await axios.post(
+			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches`, {
+				name: branchName,
+				startPoint: startCommit,
+				message: "Directus Changelog Branch | auto-created by the Version Control Changelog Extension for Directus"
+			},
+			bitbucketApiAuthHeader
+		);
+		if (request.status !== 200) {
+			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
+					'BitbucketVersionControl: could not retrieve list of branches');
+		}
+	}
+
+	private async getLastCommitId(branchName: string) {
 		const bitbucketApiAuthHeader = {
 			auth: {
 				username: this.authentication.user,
@@ -172,7 +194,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching last commit information');
 		let lastCommitDetails = await axios.get(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/commits?until=${this.serverConfig.branchName}&limit=0&start=0`,
+			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/commits?until=${branchName}&limit=0&start=0`,
 			bitbucketApiAuthHeader
 		);
 		// Last commit is always filled as long as there is at least one in the repo; even on new branches you get the last commit ID from the origin
@@ -203,7 +225,8 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		}
 	}
 
-	private async getListOfFiles() {
+	private async getListOfFiles(startAt: number = 0): Promise<Array<string>> {
+		const result = new Array<string>();
 		const bitbucketApiAuthHeader = {
 			auth: {
 				username: this.authentication.user,
@@ -212,24 +235,21 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching list of files in repository');
 		let request = await axios.get(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/files?limit=1000`,
+			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/files?start=${startAt}&limit=100`,
 			bitbucketApiAuthHeader
 		);
 		if (request.status !== 200) {
 			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
-					'BitbucketVersionControl: could not retrieve list of files');
+					`BitbucketVersionControl: could not retrieve list of files starting at file number ${startAt + 1}`);
 		}
+		result.push(...request.data.values);
 		if (!request.data.isLastPage) {
-			// ToDo: make sure this is can continue to fetch all files
-			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
-					'BitbucketVersionControl: found more then 1000 files in the repository, canceling changelog commit - please clean up to reactivate changelog writing');
+			const moreFiles = await this.getListOfFiles(startAt + 100);
+			result.push(...moreFiles);
 		}
-		request.data.values.forEach((file: any) => {
-			// f
-		});
-		//return result;
+		return result;
 	}
 
-	// rebase https://docs.atlassian.com/bitbucket-server/rest/5.6.1/bitbucket-git-rest.html#idm45958180125680
+	// rebase https://docs.atlassian.com/bitbucket-server/rest/5.6.1/bitbucket-git-rest.html#idm45958180125680 <- need to check if that works with the 6.x API; seems to be gone :(
 
 }
