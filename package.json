@@ -1,0 +1,32 @@
+{
+	"name": "directus-extension-version-control-changelog",
+	"version": "0.8.0",
+	"description": "A Directus hook extension to push user written change summaries (from a singleton collection text field) to a changelog in a VCS server",
+	"keywords": [
+		"directus",
+		"directus-extension",
+		"directus-custom-hook",
+		"bitbucket",
+		"vcs",
+		"changelog"
+	],
+	"directus:extension": {
+		"type": "hook",
+		"path": "dist/index.js",
+		"source": "src/index.ts",
+		"host": "^9.5.1"
+	},
+	"scripts": {
+		"build": "directus-extension build"
+	},
+	"devDependencies": {
+		"@directus/extensions-sdk": "9.5.1",
+		"@types/node": "^17.0.16",
+		"axios": "^0.24.0",
+		"pino": "^7.6.5",
+		"typescript": "^4.5.5"
+	},
+	"dependencies": {
+		"form-data": "^4.0.0"
+	}
+}
