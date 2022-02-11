@@ -130,4 +130,106 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		return true;
 	}
 
+	private async getBranchList(): Promise<{ baseBranch: string; availableBranches: Array<string>; }> {
+		const result = {
+			baseBranch: '',
+			availableBranches: new Array<string>()
+		}
+		const bitbucketApiAuthHeader = {
+			auth: {
+				username: this.authentication.user,
+				password: this.authentication.password
+			}
+		};
+		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching list of branches in repository');
+		let request = await axios.get(
+			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches?limit=1000`,
+			bitbucketApiAuthHeader
+		);
+		if (request.status !== 200) {
+			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
+					'BitbucketVersionControl: could not retrieve list of branches');
+		}
+		if (!request.data.isLastPage) {
+			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
+					'BitbucketVersionControl: found more then 1000 branches in the repository, canceling changelog commit - please clean up to reactivate changelog writing');
+		}
+		request.data.values.forEach((branch: any) => {
+			if (branch.isDefault) {
+				result.baseBranch = branch.displayId;
+			}
+			result.availableBranches.push(branch.displayId as string);
+		});
+		return result;
+	}
+
+	private async getLastCommitId() {
+		const bitbucketApiAuthHeader = {
+			auth: {
+				username: this.authentication.user,
+				password: this.authentication.password
+			}
+		};
+		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching last commit information');
+		let lastCommitDetails = await axios.get(
+			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/commits?until=${this.serverConfig.branchName}&limit=0&start=0`,
+			bitbucketApiAuthHeader
+		);
+		// Last commit is always filled as long as there is at least one in the repo; even on new branches you get the last commit ID from the origin
+		if (lastCommitDetails.status !== 200) {
+			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
+					'BitbucketVersionControl: could not fetch the ID of the latest commit in the branch');
+		}
+		return lastCommitDetails.data.values[0].id as string;
+	}
+
+	private async getCurrentChangelogContent() {
+		const bitbucketApiAuthHeader = {
+			auth: {
+				username: this.authentication.user,
+				password: this.authentication.password
+			}
+		};
+		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching current changelog content');
+		let oldChangelogContent = await axios.get(
+			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/browse/${this.changelogFile}?at=${this.serverConfig.branchName}`,
+			bitbucketApiAuthHeader
+		);
+		// ToDo: if 404 (not found) we need to generate dummy data - or handle this somehow different
+		if (oldChangelogContent.status !== 200) {
+			this.loggerReference.logMessage(LogLevels.error, 'BitbucketVersionControl: could not fetch the current changelog from Bitbucket');
+			// ToDo: find out if the file is just missing and we need to create it
+			return false;
+		}
+	}
+
+	private async getListOfFiles() {
+		const bitbucketApiAuthHeader = {
+			auth: {
+				username: this.authentication.user,
+				password: this.authentication.password
+			}
+		};
+		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching list of files in repository');
+		let request = await axios.get(
+			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/files?limit=1000`,
+			bitbucketApiAuthHeader
+		);
+		if (request.status !== 200) {
+			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
+					'BitbucketVersionControl: could not retrieve list of files');
+		}
+		if (!request.data.isLastPage) {
+			// ToDo: make sure this is can continue to fetch all files
+			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
+					'BitbucketVersionControl: found more then 1000 files in the repository, canceling changelog commit - please clean up to reactivate changelog writing');
+		}
+		request.data.values.forEach((file: any) => {
+			// f
+		});
+		//return result;
+	}
+
+	// rebase https://docs.atlassian.com/bitbucket-server/rest/5.6.1/bitbucket-git-rest.html#idm45958180125680
+
 }
