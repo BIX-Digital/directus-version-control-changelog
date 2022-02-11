@@ -13,6 +13,21 @@ Additionally we wanted to see what has changed in a new release - code as well a
 
 That is why we decided to maintain a changelog inside of the VCS that can be updated by Directus. And for that we wrote this extension hook.
 
+## Table of Contents
+
+- [Directus Hook Extension: Version Control Changelog](#directus-hook-extension-version-control-changelog)
+	- [Why would I want that?](#why-would-i-want-that)
+	- [Table of Contents](#table-of-contents)
+	- [How can I use it?](#how-can-i-use-it)
+		- [Set up things in Directus](#set-up-things-in-directus)
+			- [1. Create a singleton collection with at least one textarea](#1-create-a-singleton-collection-with-at-least-one-textarea)
+			- [2. Add the required configuration values to your Directus installation](#2-add-the-required-configuration-values-to-your-directus-installation)
+			- [3. Add the extension to your installation](#3-add-the-extension-to-your-installation)
+	- [Release History](#release-history)
+	- [ToDo's](#todos)
+		- [Before first release](#before-first-release)
+		- [Future possibilities](#future-possibilities)
+
 ## How can I use it?
 
 ### Set up things in Directus
@@ -63,3 +78,27 @@ If everything works you will see the following line in the log output:
 ...
 01:23:45 ✨ Server started at http://localhost:8055
 ```
+
+## Release History
+
+no releases yet (but should be coming soon)
+
+## ToDo's
+
+### Before first release
+
+Before we make the first release this will be tackled
+
+- [ ] automate Bitbucket setup (basically be more error tolerant)
+  - make sure branch is created if not already existing
+  - avoid the need of creating the file before first use
+
+### Future possibilities
+
+These are things that would make sense, but it is not granted that it will be implemented
+
+- [ ] support "auto-create" of the required collection(s) and field(s) on first run
+- [ ] allow multiple changelogs (multiple collections writing to multiple repositories)
+- [ ] add GitHub and / or GitLab as target systems
+- [ ] add to npm (to allow [installation via npm](https://directus.io/road-map/#q1-2022) once it is available)
+- [ ] add to the [Extension Marketplace]((https://directus.io/road-map/#q2-2022)) once it is available
