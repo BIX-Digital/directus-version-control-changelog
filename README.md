@@ -50,10 +50,10 @@ The extension uses the configuration mechanism of Directus. So all you have to d
 | Variable Name | Description |
 |---------------|-------------|
 | `VERSION_CONTROL_CHANGELOG_COLLECTION` | name of the collection (e.g. `vcs_changelog`) |
-| `VERSION_CONTROL_CHANGELOG_FIELD_NAME` | name of the field in teh collection (e.g. `changes_made`) |
+| `VERSION_CONTROL_CHANGELOG_FIELD_NAME` | name of the field in the collection (e.g. `changes_made`) |
 | `VERSION_CONTROL_CHANGELOG_VCS` | Has to be `bitbucket` for now |
 | `VERSION_CONTROL_CHANGELOG_BITBUCKET_USER` | the user of the Bitbucket VCS server |
-| `VERSION_CONTROL_CHANGELOG_BITBUCKET_PASSWORD` | the password for teh user above |
+| `VERSION_CONTROL_CHANGELOG_BITBUCKET_PASSWORD` | the password for the user above |
 | `VERSION_CONTROL_CHANGELOG_VCS_SERVER_URL` | the full URL of your VCS server - without a trailing `/` (e.g. `https://your.vcs.example`) |
 | `VERSION_CONTROL_CHANGELOG_VCS_PROJECT` | the name of the project (or user) on the VCS server |
 | `VERSION_CONTROL_CHANGELOG_VCS_REPOSITORY` | the name of the repository of the project (or user) |
@@ -68,7 +68,7 @@ The extension uses the configuration mechanism of Directus. So all you have to d
 1. run `npm run build`
 1. create a directory named `version-control-changelog` inside of your `<directus-root-folder>/extensions/hooks/` directory
 1. copy the generated `index.js` file from the `dist` directory
-1. paste the copied file into teh newly created directory
+1. paste the copied file into the newly created directory
 1. restart your Directus instance; monitor the log during startup
 
 If everything works you will see the following line in the log output:
