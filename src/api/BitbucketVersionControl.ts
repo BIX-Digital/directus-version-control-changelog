@@ -101,6 +101,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 	 * @returns An object that contains the base branch name as well as an array with all branches in the repository
 	 */
 	private async getBranchList(): Promise<{ baseBranch: string; availableBranches: Array<string>; }> {
+		const pageSize = 1000;
 		const result = {
 			baseBranch: '',
 			availableBranches: new Array<string>()
@@ -115,7 +116,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		let response: any = undefined;
 		try {
 			const requestResponse = await axios.get(
-				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches?limit=1000`,
+				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches?limit=${pageSize}`,
 				bitbucketApiAuthHeader
 			);
 			response = requestResponse;
@@ -128,7 +129,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		}
 		if (!response.data.isLastPage) {
 			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
-					'BitbucketVersionControl: found more then 1000 branches in the repository, canceling changelog commit - please clean up to reactivate changelog writing');
+					`BitbucketVersionControl: found more then ${pageSize} branches in the repository, canceling changelog commit - please clean up to reactivate changelog writing`);
 		}
 		response.data.values.forEach((branch: any) => {
 			if (branch.isDefault) {
