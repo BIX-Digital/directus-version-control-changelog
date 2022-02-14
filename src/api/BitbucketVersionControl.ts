@@ -35,14 +35,13 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		this.changelogFile = '';
 		this.isConfigured = false;
 		this.exceptionProvider = ExceptionProvider.getInstance();
-		this.loggerReference.logMessage(LogLevels.debug, 'Bitbucket Version Control Abstraction created');
-
 		this.defaultAuthHeader = {
 			auth: {
-				username: this.authentication.user,
-				password: this.authentication.password
+				username: '',
+				password: ''
 			}
 		};
+		this.loggerReference.logMessage(LogLevels.debug, 'Bitbucket Version Control Abstraction created');
 	}
 
 	applyConfig(authentication: Credentials, config: VersionControlConfig, changelogFile: string): void {
@@ -66,6 +65,12 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		this.authentication = authentication;
 		this.serverConfig = config;
 		this.changelogFile = changelogFile;
+		this.defaultAuthHeader = {
+			auth: {
+				username: this.authentication.user,
+				password: this.authentication.password
+			}
+		};
 		this.isConfigured = true;
 	}
 
