@@ -142,7 +142,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 	/**
 	 * Internal function to create a branch in the repository
 	 * @param branchName The name of the branch that should be created
-	 * @param startCommit The ID of the commit on teh base-branch that should be used as origin
+	 * @param startCommit The ID of the commit on the base-branch that should be used as origin
 	 */
 	private async createBranch(branchName: string, startCommit: string): Promise<void> {
 		const bitbucketApiAuthHeader = {
@@ -278,7 +278,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 	 * Internal function to push the new Changelog to the repository
 	 * @param changelogLines An array of strings, each item representing one line in the file to be written
 	 * @param commitMessage The commit message that should be used for the push
-	 * @param lastCommitId The ID of the previous commit if teh file gets extended - or an empty string if the file is to be created
+	 * @param lastCommitId The ID of the previous commit if the file gets extended - or an empty string if the file is to be created
 	 */
 	private async pushNewChangelog(changelogLines: Array<string>, commitMessage: string, lastCommitId: string) {
 		const data = new FormData();
