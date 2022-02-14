@@ -9,6 +9,10 @@ export default class ExtensionLogger {
 
 	private loggerReference: Logger<LoggerOptions>;
 
+	/**
+	 * Create a new instance
+	 * @param directusLogger The reference to the pino logger provided by Directus
+	 */
 	constructor(directusLogger: Logger<LoggerOptions>) {
 		// adding a prefix for the output
 		// using "name" to have it before the message itself based on the used formatter
@@ -17,7 +21,11 @@ export default class ExtensionLogger {
 		this.loggerReference = directusLogger.child({name: 'Version Control Changelog Extension'});
 	}
 
-	
+	/**
+	 * Log a simple text message
+	 * @param level The log level at which this should be logged
+	 * @param message The message to log
+	 */
 	logMessage(level: LogLevels, message: string) : void {
 		switch (level) {
 			case LogLevels.silent:
@@ -44,28 +52,37 @@ export default class ExtensionLogger {
 		}
 	}
 
-	logObject(level: LogLevels, headline: string, object: any) : void {
+	/**
+	 * Log a text description and an object
+	 * @param level The log level at which this should be logged
+	 * @param headline The message to log
+	 * @param errorObject The object to log
+	 */
+	logObject(level: LogLevels, headline: string, errorObject: any) : void {
+		// The JSON.stringify is used to work around the quirk that pino
+		// for some reason does not print out the objects lately; it always
+		// claims they are undefined (you can check that by simple logging one object)
 		switch (level) {
 			case LogLevels.silent:
-				this.loggerReference.silent(object, headline);
+				this.loggerReference.silent(`${headline}\n${JSON.stringify(errorObject, null, 2)}`);
 				break;
 			case LogLevels.trace:
-				this.loggerReference.trace(object, headline);
+				this.loggerReference.trace(`${headline}\n${JSON.stringify(errorObject, null, 2)}`);
 				break;
 			case LogLevels.debug:
-				this.loggerReference.debug(object, headline);
+				this.loggerReference.debug(`${headline}\n${JSON.stringify(errorObject, null, 2)}`);
 				break;
 			case LogLevels.info:
-				this.loggerReference.info(object, headline);
+				this.loggerReference.info(`${headline}\n${JSON.stringify(errorObject, null, 2)}`);
 				break;
 			case LogLevels.warn:
-				this.loggerReference.warn(object, headline);
+				this.loggerReference.warn(`${headline}\n${JSON.stringify(errorObject, null, 2)}`);
 				break;
 			case LogLevels.error:
-				this.loggerReference.error(object, headline);
+				this.loggerReference.error(`${headline}\n${JSON.stringify(errorObject, null, 2)}`);
 				break;
 			case LogLevels.fatal:
-				this.loggerReference.fatal(object, headline);
+				this.loggerReference.fatal(`${headline}\n${JSON.stringify(errorObject, null, 2)}`);
 				break;
 		}
 	}
