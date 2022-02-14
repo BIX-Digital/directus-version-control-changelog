@@ -4,7 +4,6 @@ import { ExceptionTypes } from '../src/enums/ExceptionTypes';
 
 // mocks for the exceptions
 class BaseException extends Error {
-	extensions: Record<string, any>;
 	constructor(message: string) {
 		super(message);
 	}
