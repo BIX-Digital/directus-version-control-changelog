@@ -60,6 +60,9 @@ export default class ChangelogFormatter {
 		});
 
 		// append old log content
+		if (oldLog.length > 0) {
+			newLog.push('');
+		}
 		oldLog.forEach((line, index) => {
 			if (index === 0 || index === 1) {
 				// if first line and or second line of old log
