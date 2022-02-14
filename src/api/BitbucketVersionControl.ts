@@ -21,6 +21,12 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 	private isConfigured: boolean;
 	private loggerReference: ExtensionLogger;
 	private exceptionProvider: ExceptionProvider;
+	private defaultAuthHeader: {
+		auth: {
+			username: string,
+			password: string
+		}
+	};
 
 	constructor(logger: ExtensionLogger) {
 		this.loggerReference = logger;
@@ -30,6 +36,13 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		this.isConfigured = false;
 		this.exceptionProvider = ExceptionProvider.getInstance();
 		this.loggerReference.logMessage(LogLevels.debug, 'Bitbucket Version Control Abstraction created');
+
+		this.defaultAuthHeader = {
+			auth: {
+				username: this.authentication.user,
+				password: this.authentication.password
+			}
+		};
 	}
 
 	applyConfig(authentication: Credentials, config: VersionControlConfig, changelogFile: string): void {
@@ -106,18 +119,12 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 			baseBranch: '',
 			availableBranches: new Array<string>()
 		}
-		const bitbucketApiAuthHeader = {
-			auth: {
-				username: this.authentication.user,
-				password: this.authentication.password
-			}
-		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching list of branches in repository');
 		let response: any = undefined;
 		try {
 			const requestResponse = await axios.get(
 				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches?limit=${pageSize}`,
-				bitbucketApiAuthHeader
+				this.defaultAuthHeader
 			);
 			response = requestResponse;
 		} catch (error: any) {
@@ -146,12 +153,6 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 	 * @param startCommit The ID of the commit on the base-branch that should be used as origin
 	 */
 	private async createBranch(branchName: string, startCommit: string): Promise<void> {
-		const bitbucketApiAuthHeader = {
-			auth: {
-				username: this.authentication.user,
-				password: this.authentication.password
-			}
-		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: creating working branch in repository');
 		let responseStatus: any = undefined;
 		try {
@@ -161,7 +162,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 					startPoint: startCommit,
 					message: "Directus Changelog Branch | auto-created by the Version Control Changelog Extension for Directus"
 				},
-				bitbucketApiAuthHeader
+				this.defaultAuthHeader
 			);
 			responseStatus = requestResponse.status;
 		} catch (error: any) {
@@ -179,18 +180,12 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 	 * @returns The ID of the last commit in the branch
 	 */
 	private async getLastCommitId(branchName: string): Promise<string> {
-		const bitbucketApiAuthHeader = {
-			auth: {
-				username: this.authentication.user,
-				password: this.authentication.password
-			}
-		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching last commit information');
 		let response: any = undefined;
 		try {
 			const requestResponse = await axios.get(
 				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/commits?until=${branchName}&limit=0&start=0`,
-				bitbucketApiAuthHeader
+				this.defaultAuthHeader
 			);
 			response = requestResponse; 
 		} catch (error: any) {
@@ -210,18 +205,12 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 	 */
 	private async getCurrentChangelogContent(): Promise<Array<string>> {
 		let result = new Array<string>();
-		const bitbucketApiAuthHeader = {
-			auth: {
-				username: this.authentication.user,
-				password: this.authentication.password
-			}
-		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching current changelog content');
 		let response: any = undefined;
 		try {
 			const requestResponse = await axios.get(
 				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/browse/${this.changelogFile}?at=${this.serverConfig.branchName}`,
-				bitbucketApiAuthHeader
+				this.defaultAuthHeader
 			);
 			response = requestResponse;
 		} catch (error: any) {
@@ -246,18 +235,12 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 	private async getListOfFiles(startAt: number = 0): Promise<Array<string>> {
 		const pageSize = 250;
 		const result = new Array<string>();
-		const bitbucketApiAuthHeader = {
-			auth: {
-				username: this.authentication.user,
-				password: this.authentication.password
-			}
-		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching list of files in repository');
 		let response: any = undefined;
 		try {
 			const requestResponse = await axios.get(
 				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/files?at=${this.serverConfig.branchName}&start=${startAt}&limit=${pageSize}`,
-				bitbucketApiAuthHeader
+				this.defaultAuthHeader
 			);
 			response = requestResponse;
 		} catch (error: any) {
@@ -292,10 +275,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		}
 		const bitbucketApiPutHeader = {
 			headers: data.getHeaders(),
-			auth: {
-				username: this.authentication.user,
-				password: this.authentication.password
-			}
+			auth: this.defaultAuthHeader.auth
 		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: committing changes to Bitbucket');
 		let responseStatus = undefined;
