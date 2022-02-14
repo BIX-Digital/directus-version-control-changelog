@@ -6,7 +6,7 @@ Instead of just "blindly" adding each change in the database it relies on a user
 
 ## Why would I want that?
 
-We ([BI X](https://www.bix-digital.com)) created this extension because of the way how [GastbyJS](https://www.gatsbyjs.com/) with Directus as content source and our build system ([OpenDevStack](https://www.opendevstack.org/) with [ods-pipeline](https://github.com/opendevstack/ods-pipeline)) work.  
+We ([BI X](https://www.bix-digital.com)) created this extension because of the way how [GatsbyJS](https://www.gatsbyjs.com/) with Directus as content source and our build system ([OpenDevStack](https://www.opendevstack.org/) with [ods-pipeline](https://github.com/opendevstack/ods-pipeline)) work.  
 Our builds are triggered by webhooks that get fired on pushes to our VCS server. For that it relies heavily on the Bitbucket webhooks and its specific content. Recreating them with the Directus webhook functionality would have been a huge effort - and as our build system does not rebuild things if there are no changes (to the codebase / repository) it would also be without any effect.
 
 Additionally we wanted to see what has changed in a new release - code as well as content.
@@ -89,7 +89,7 @@ no releases yet (but should be coming soon)
 
 Before we make the first release this will be tackled
 
-- [ ] automate Bitbucket setup (basically be more error tolerant)
+- [x] automate Bitbucket setup (basically be more error tolerant)
   - make sure branch is created if not already existing
   - avoid the need of creating the file before first use
 
