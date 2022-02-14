@@ -61,75 +61,43 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 			throw this.exceptionProvider.getNewException(ExceptionTypes.BaseException, 'BitbucketVersionControl: Calling addToChangelogFile() cannot work without configuration; run applyConfig() first');
 		}
 
-		const bitbucketApiAuthHeader = {
-			auth: {
-				username: this.authentication.user,
-				password: this.authentication.password
+		try {
+			const branches = await this.getBranchList();
+			let lastCommitId = ''
+			if (branches.availableBranches.includes(this.serverConfig.branchName)) {
+				// branch exists already, just get last commit
+				lastCommitId = await this.getLastCommitId(this.serverConfig.branchName);
+			} else {
+				// branch needs to be created from latest commit in base branch
+				lastCommitId = await this.getLastCommitId(branches.baseBranch);
+				await this.createBranch(this.serverConfig.branchName, lastCommitId);
 			}
-		};
-		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching last commit information');
-		let lastCommitDetails = await axios.get(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/commits?until=${this.serverConfig.branchName}&limit=0&start=0`,
-			bitbucketApiAuthHeader
-		);
-		// ToDo: 404 in case of non existent branch -> {"errors": [{"context": null,"message": "Commit 'feature/directus-changes' does not exist in repository 'directus-plugin-playground'.","exceptionName": "com.atlassian.bitbucket.commit.NoSuchCommitException"}]}
-		// Las commit is always filled as long as there is at least one in the repo; even on new branches you get the last commit ID from the origin
-		if (lastCommitDetails.status !== 200) {
-			this.loggerReference.logMessage(LogLevels.error, 'could not fetch the ID of the latest commit from Bitbucket');
-			// ToDo: error handling in combination with detection if file is there
-			return false;
-		}
-		const lastCommitId = lastCommitDetails.data.values[0].id;
-		this.loggerReference.logMessage(LogLevels.debug, `BitbucketVersionControl: latest commit in Directus Changelog Branch: ${lastCommitId}`);
-
-		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching current changelog content');
-		let oldChangelogContent = await axios.get(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/browse/${this.changelogFile}?at=${this.serverConfig.branchName}`,
-			bitbucketApiAuthHeader
-		);
-		// ToDo: if 404 (not found) we need to generate dummy data - or handle this somehow different
-		if (oldChangelogContent.status !== 200) {
-			this.loggerReference.logMessage(LogLevels.error, 'BitbucketVersionControl: could not fetch the current changelog from Bitbucket');
-			// ToDo: find out if the file is just missing and we need to create it
-			return false;
-		}
-		
-		// build updated changelog
-		const tempLines = new Array<string>();
-		// extract lines from object array
-		for (let idx = 0; idx < oldChangelogContent.data?.lines?.length; idx++) {
-			tempLines.push(oldChangelogContent.data?.lines[idx].text);
-		}
-		const newLogLines = ChangelogFormatter.insertNewEntryIntoLog(tempLines, newContent);
-		
-		const data = new FormData();
-		data.append('branch', this.serverConfig.branchName);
-		data.append('content', newLogLines.join(`\n`));
-		data.append('message', commitMessage);
-		data.append('sourceCommitId', lastCommitId);
-		const bitbucketApiPutHeader = {
-			headers: data.getHeaders(),
-			auth: {
-				username: this.authentication.user,
-				password: this.authentication.password
+			const filesInRepo = await this.getListOfFiles();
+			let currentChangelog = new Array<string>();
+			if (filesInRepo.includes(this.changelogFile)) {
+				// file exists, get latest content
+				currentChangelog = await this.getCurrentChangelogContent();
+			} else {
+				// file is not yet created; remove commit ID
+				lastCommitId = '';
 			}
-		};
-		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: committing changes to Bitbucket');
-		const putResult = await axios.put(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/browse/${this.changelogFile}`,
-			data, bitbucketApiPutHeader
-		);
 
-		if (putResult.status !== 200) {
-			this.loggerReference.logMessage(LogLevels.error, 'BitbucketVersionControl: Could push the new changelog to Bitbucket');
-			// ToDo: find out if the file is just missing and we need to create it
+			const logToPush = ChangelogFormatter.insertNewEntryIntoLog(currentChangelog, newContent);
+
+			await this.pushNewChangelog(logToPush, commitMessage, lastCommitId);
+			this.loggerReference.logMessage(LogLevels.info, 'BitbucketVersionControl: new changelog pushed successful');
+		} catch (error: any) {
+			this.loggerReference.logMessage(LogLevels.error, error.message);
 			return false;
 		}
-
 		// signal that everything worked
 		return true;
 	}
 
+	/**
+	 * Internal function to get the list of branches in the repository
+	 * @returns An object that contains the base branch name as well as an array with all branches in the repository
+	 */
 	private async getBranchList(): Promise<{ baseBranch: string; availableBranches: Array<string>; }> {
 		const result = {
 			baseBranch: '',
@@ -142,19 +110,25 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 			}
 		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching list of branches in repository');
-		let request = await axios.get(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches?limit=1000`,
-			bitbucketApiAuthHeader
-		);
-		if (request.status !== 200) {
+		let response: any = undefined;
+		try {
+			const requestResponse = await axios.get(
+				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches?limit=1000`,
+				bitbucketApiAuthHeader
+			);
+			response = requestResponse;
+		} catch (error: any) {
+			this.loggerReference.logObject(LogLevels.debug, 'Axios error result:', error.response.data.errors);
+		}
+		if (response.status !== 200) {
 			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
 					'BitbucketVersionControl: could not retrieve list of branches');
 		}
-		if (!request.data.isLastPage) {
+		if (!response.data.isLastPage) {
 			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
 					'BitbucketVersionControl: found more then 1000 branches in the repository, canceling changelog commit - please clean up to reactivate changelog writing');
 		}
-		request.data.values.forEach((branch: any) => {
+		response.data.values.forEach((branch: any) => {
 			if (branch.isDefault) {
 				result.baseBranch = branch.displayId;
 			}
@@ -163,29 +137,45 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		return result;
 	}
 
-	private async createBranch(branchName: string, startCommit: string) {
+	/**
+	 * Internal function to create a branch in the repository
+	 * @param branchName The name of the branch that should be created
+	 * @param startCommit The ID of the commit on teh base-branch that should be used as origin
+	 */
+	private async createBranch(branchName: string, startCommit: string): Promise<void> {
 		const bitbucketApiAuthHeader = {
 			auth: {
 				username: this.authentication.user,
 				password: this.authentication.password
 			}
 		};
-		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching list of branches in repository');
-		let request = await axios.post(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches`, {
-				name: branchName,
-				startPoint: startCommit,
-				message: "Directus Changelog Branch | auto-created by the Version Control Changelog Extension for Directus"
-			},
-			bitbucketApiAuthHeader
-		);
-		if (request.status !== 200) {
+		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: creating working branch in repository');
+		let responseStatus = undefined;
+		try {
+			let requestResponse = await axios.post(
+				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches`, {
+					name: branchName,
+					startPoint: startCommit,
+					message: "Directus Changelog Branch | auto-created by the Version Control Changelog Extension for Directus"
+				},
+				bitbucketApiAuthHeader
+			);
+			responseStatus = requestResponse.status;
+		} catch (error: any) {
+			this.loggerReference.logObject(LogLevels.debug, 'Axios error result:', error.response.data.errors);
+		}
+		if (responseStatus !== 200) {
 			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
-					'BitbucketVersionControl: could not retrieve list of branches');
+					'BitbucketVersionControl: could not create working of branch');
 		}
 	}
 
-	private async getLastCommitId(branchName: string) {
+	/**
+	 * Internal function to get the last commit in a branch of the repository
+	 * @param branchName The name of the branch where you want to get the last commit from
+	 * @returns The ID of the last commit in the branch
+	 */
+	private async getLastCommitId(branchName: string): Promise<string> {
 		const bitbucketApiAuthHeader = {
 			auth: {
 				username: this.authentication.user,
@@ -193,19 +183,30 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 			}
 		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching last commit information');
-		let lastCommitDetails = await axios.get(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/commits?until=${branchName}&limit=0&start=0`,
-			bitbucketApiAuthHeader
-		);
+		let response: any = undefined;
+		try {
+			const requestResponse = await axios.get(
+				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/commits?until=${branchName}&limit=0&start=0`,
+				bitbucketApiAuthHeader
+			);
+			response = requestResponse; 
+		} catch (error: any) {
+			this.loggerReference.logObject(LogLevels.debug, 'Axios error result:', error.response.data.errors);
+		}
 		// Last commit is always filled as long as there is at least one in the repo; even on new branches you get the last commit ID from the origin
-		if (lastCommitDetails.status !== 200) {
+		if (response.status !== 200) {
 			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
 					'BitbucketVersionControl: could not fetch the ID of the latest commit in the branch');
 		}
-		return lastCommitDetails.data.values[0].id as string;
+		return response.data.values[0].id as string;
 	}
 
-	private async getCurrentChangelogContent() {
+	/**
+	 * Internal function to get the content of the current changelog in the repository
+	 * @returns An array os strings, each item represents a line in the file
+	 */
+	private async getCurrentChangelogContent(): Promise<Array<string>> {
+		let result = new Array<string>();
 		const bitbucketApiAuthHeader = {
 			auth: {
 				username: this.authentication.user,
@@ -213,19 +214,34 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 			}
 		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching current changelog content');
-		let oldChangelogContent = await axios.get(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/browse/${this.changelogFile}?at=${this.serverConfig.branchName}`,
-			bitbucketApiAuthHeader
-		);
-		// ToDo: if 404 (not found) we need to generate dummy data - or handle this somehow different
-		if (oldChangelogContent.status !== 200) {
-			this.loggerReference.logMessage(LogLevels.error, 'BitbucketVersionControl: could not fetch the current changelog from Bitbucket');
-			// ToDo: find out if the file is just missing and we need to create it
-			return false;
+		let response: any = undefined;
+		try {
+			const requestResponse = await axios.get(
+				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/browse/${this.changelogFile}?at=${this.serverConfig.branchName}`,
+				bitbucketApiAuthHeader
+			);
+			response = requestResponse;
+		} catch (error: any) {
+			this.loggerReference.logObject(LogLevels.debug, 'Axios error result:', error.response.data.errors);
 		}
+		if (response.status !== 200) {
+			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
+				'BitbucketVersionControl: could not fetch the current changelog from Bitbucket');
+		}
+		// extract lines from object array
+		response.data?.lines?.forEach((line: any) => {
+			result.push(line.text);
+		});
+		return result;
 	}
 
+	/**
+	 * Internal function to get the list of files in the repository
+	 * @param startAt Optional parameter at what position to start - for the recursive calls in case there are many files
+	 * @returns An array of strings that contains the path and filename of each file in the repository
+	 */
 	private async getListOfFiles(startAt: number = 0): Promise<Array<string>> {
+		const pageSize = 250;
 		const result = new Array<string>();
 		const bitbucketApiAuthHeader = {
 			auth: {
@@ -234,22 +250,65 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 			}
 		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: fetching list of files in repository');
-		let request = await axios.get(
-			`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/files?start=${startAt}&limit=100`,
-			bitbucketApiAuthHeader
-		);
-		if (request.status !== 200) {
+		let response: any = undefined;
+		try {
+			const requestResponse = await axios.get(
+				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/files?start=${startAt}&limit=${pageSize}`,
+				bitbucketApiAuthHeader
+			);
+			response = requestResponse;
+		} catch (error: any) {
+			this.loggerReference.logObject(LogLevels.debug, 'Axios error result:', error.response.data.errors);
+		}
+		if (response.status !== 200) {
 			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
 					`BitbucketVersionControl: could not retrieve list of files starting at file number ${startAt + 1}`);
 		}
-		result.push(...request.data.values);
-		if (!request.data.isLastPage) {
-			const moreFiles = await this.getListOfFiles(startAt + 100);
+		result.push(...response.data.values);
+		if (!response.data.isLastPage) {
+			const moreFiles = await this.getListOfFiles(startAt + pageSize);
 			result.push(...moreFiles);
 		}
 		return result;
 	}
 
-	// rebase https://docs.atlassian.com/bitbucket-server/rest/5.6.1/bitbucket-git-rest.html#idm45958180125680 <- need to check if that works with the 6.x API; seems to be gone :(
+	/**
+	 * Internal function to push the new Changelog to the repository
+	 * @param changelogLines An array of strings, each item representing one line in the file to be written
+	 * @param commitMessage The commit message that should be used for the push
+	 * @param lastCommitId The ID of the previous commit if teh file gets extended - or an empty string if the file is to be created
+	 */
+	private async pushNewChangelog(changelogLines: Array<string>, commitMessage: string, lastCommitId: string) {
+		const data = new FormData();
+		data.append('branch', this.serverConfig.branchName);
+		data.append('content', changelogLines.join(`\n`));
+		data.append('message', commitMessage);
+		if (lastCommitId !== '') {
+			// when the file is to be created there must not be a previous commit ID (even no empty one)
+			data.append('sourceCommitId', lastCommitId);
+		}
+		const bitbucketApiPutHeader = {
+			headers: data.getHeaders(),
+			auth: {
+				username: this.authentication.user,
+				password: this.authentication.password
+			}
+		};
+		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: committing changes to Bitbucket');
+		let responseStatus = undefined;
+		try {
+			const putResult = await axios.put(
+				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/browse/${this.changelogFile}`,
+				data, bitbucketApiPutHeader
+			);
+			responseStatus = putResult.status;
+		} catch (error: any) {
+			this.loggerReference.logObject(LogLevels.debug, 'Axios error result:', error.response.data.errors);
+		}
+		if (responseStatus !== 200) {
+			throw this.exceptionProvider.getNewException(ExceptionTypes.UnexpectedResponseException,
+				'BitbucketVersionControl: could not push the new changelog to Bitbucket');
+		}
+	}
 
 }
