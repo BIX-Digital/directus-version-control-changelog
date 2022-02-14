@@ -69,6 +69,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 				lastCommitId = await this.getLastCommitId(this.serverConfig.branchName);
 			} else {
 				// branch needs to be created from latest commit in base branch
+				this.loggerReference.logMessage(LogLevels.info, 'BitbucketVersionControl: configured working branch not found, will be created');
 				lastCommitId = await this.getLastCommitId(branches.baseBranch);
 				await this.createBranch(this.serverConfig.branchName, lastCommitId);
 			}
@@ -78,6 +79,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 				// file exists, get latest content
 				currentChangelog = await this.getCurrentChangelogContent();
 			} else {
+				this.loggerReference.logMessage(LogLevels.info, 'BitbucketVersionControl: configured file not found, will be created');
 				// file is not yet created; remove commit ID
 				lastCommitId = '';
 			}
@@ -253,7 +255,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 		let response: any = undefined;
 		try {
 			const requestResponse = await axios.get(
-				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/files?start=${startAt}&limit=${pageSize}`,
+				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/files?at=${this.serverConfig.branchName}&start=${startAt}&limit=${pageSize}`,
 				bitbucketApiAuthHeader
 			);
 			response = requestResponse;
