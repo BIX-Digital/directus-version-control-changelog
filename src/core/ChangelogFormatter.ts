@@ -23,15 +23,15 @@ export default class ChangelogFormatter {
 			if (line.trim() !== '') {
 				if (!line.trim().startsWith('-')) {
 					// no dash at the beginning - add one
-					formattedChanges.push('- '.concat(line));
+					formattedChanges.push('- '.concat(line.trim()));
 				} else {
 					if (line.trim().startsWith('- ')) {
 						// starts with dash and space (as required in markdown)
-						formattedChanges.push(line);
+						formattedChanges.push(line.trim());
 					} else {
 						// starts with dash but not followed by space
 						// -> we need to change it to "dash space" to have a proper markdown list
-						formattedChanges.push('- '.concat(line.substring(1)));
+						formattedChanges.push('- '.concat(line.substring(1).trim()));
 					}
 				}
 			}
