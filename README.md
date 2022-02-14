@@ -89,7 +89,7 @@ no releases yet (but should be coming soon)
 
 Before we make the first release this will be tackled
 
-- [ ] automate Bitbucket setup (basically be more error tolerant)
+- [x] automate Bitbucket setup (basically be more error tolerant)
   - make sure branch is created if not already existing
   - avoid the need of creating the file before first use
 
