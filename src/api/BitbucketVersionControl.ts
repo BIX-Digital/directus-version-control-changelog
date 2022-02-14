@@ -153,7 +153,7 @@ export default class BitbucketVersionControl implements VersionControlAbstractio
 			}
 		};
 		this.loggerReference.logMessage(LogLevels.debug, 'BitbucketVersionControl: creating working branch in repository');
-		let responseStatus = undefined;
+		let responseStatus: any = undefined;
 		try {
 			let requestResponse = await axios.post(
 				`${this.serverConfig.serverUrl}/rest/api/1.0/projects/${this.serverConfig.projectName}/repos/${this.serverConfig.repositoryName}/branches`, {
