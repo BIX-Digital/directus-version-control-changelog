@@ -25,10 +25,9 @@ That is why we decided to maintain a changelog inside of the VCS that can be upd
 			- [1. Create a singleton collection with at least one textarea](#1-create-a-singleton-collection-with-at-least-one-textarea)
 			- [2. Add the required configuration values to your Directus installation](#2-add-the-required-configuration-values-to-your-directus-installation)
 			- [3. Add the extension to your installation](#3-add-the-extension-to-your-installation)
+			- [4. Add your first changelog entry](#4-add-your-first-changelog-entry)
 	- [Release History](#release-history)
-	- [ToDo's](#todos)
-		- [Before first release](#before-first-release)
-		- [Future possibilities](#future-possibilities)
+	- [Future possibilities](#future-possibilities)
 
 ## How can I use it?
 
@@ -62,6 +61,9 @@ The extension uses the configuration mechanism of Directus. So all you have to d
 | `VERSION_CONTROL_CHANGELOG_VCS_BRANCH` | the branch that should be used for reading and writing the changelog (e.g. `cms-changes`) |
 | `VERSION_CONTROL_CHANGELOG_VCS_FILENAME` | the name of the file that should be used (e.g. `directus-changelog.md`) |
 
+**Important:** Make sure that the assigned Bitbucket user has ***write*** permissions in the repository.  
+There is no need to create the branch or the file in the repository, the extension takes care of this. This also means that in case you delete the file or the branch it will be automatically recreated on the next execution of the extension.
+
 #### 3. Add the extension to your installation
 
 1. clone (or download) this repository to your local machine
@@ -81,21 +83,21 @@ If everything works you will see the following line in the log output:
 01:23:45 ✨ Server started at http://localhost:8055
 ```
 
+#### 4. Add your first changelog entry
+
+Once you save your first changes in the configured collection & field the log should show you the following line:
+
+```log
+17:32:16 ✨ Version Control Changelog Extension BitbucketVersionControl: new changelog pushed successful
+```
+
+If you see it: congratulations, your setup works!
+
 ## Release History
 
 - [Version 0.8.0](https://github.com/BIX-Digital/directus-version-control-changelog/releases/tag/v0.8.0) / 2022-02-14 -> initial release for Bitbucket
 
-## ToDo's
-
-### Before first release
-
-Before we make the first release this will be tackled
-
-- [x] automate Bitbucket setup (basically be more error tolerant)
-  - make sure branch is created if not already existing
-  - avoid the need of creating the file before first use
-
-### Future possibilities
+## Future possibilities
 
 These are things that would make sense, but it is not granted that it will be implemented
 
