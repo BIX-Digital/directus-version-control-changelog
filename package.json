@@ -2,6 +2,12 @@
 	"name": "directus-extension-version-control-changelog",
 	"version": "0.8.0",
 	"description": "A Directus hook extension to push user written change summaries (from a singleton collection text field) to a changelog in a VCS server",
+	"author": "BI X Digital (https://www.bix-digital.com)",
+	"license": "Apache-2.0",
+	"repository": {
+    "type": "git",
+    "url": "https://github.com/BIX-Digital/directus-version-control-changelog.git"
+  },
 	"keywords": [
 		"directus",
 		"directus-extension",
