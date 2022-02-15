@@ -1,6 +1,6 @@
 # Directus Hook Extension: Version Control Changelog
 
-![Node.js CI Build Badge](https://github.com/BIX-Digital/directus-version-control-changelog/workflows/Node.js%20CI/badge.svg?branch=main)
+![Node.js CI Build Badge](https://github.com/BIX-Digital/directus-version-control-changelog/workflows/Node.js%20CI/badge.svg?branch=main) [![npm version](https://badge.fury.io/js/@bix-digital%2Fdirectus-extension-version-control-changelog.svg)](https://www.npmjs.com/package/@bix-digital/directus-extension-version-control-changelog)
 
 This package is a Hook Extension for the CMS [Directus](https://directus.io) that allows you to add entries to a changelog in a version control system. Currently only Bitbucket Server is supported, but it is prepared to be extended to other version control systems (like GitHub or GitLab) in the future.
 
