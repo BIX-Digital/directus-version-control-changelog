@@ -104,5 +104,6 @@ These are things that would make sense, but it is not granted that it will be im
 - [ ] support "auto-create" of the required collection(s) and field(s) on first run
 - [ ] allow multiple changelogs (multiple collections writing to multiple repositories)
 - [ ] add GitHub and / or GitLab as target systems
-- [ ] add to npm (to allow [installation via npm](https://directus.io/road-map/#q1-2022) once it is available)
+- [x] add to npm (to allow [installation via npm](https://directus.io/road-map/#q1-2022) once it is available)
+  - [ ] confirm it works or do required adjustments once available
 - [ ] add to the [Extension Marketplace]((https://directus.io/road-map/#q2-2022)) once it is available
