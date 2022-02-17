@@ -66,7 +66,7 @@ There is no need to create the branch or the file in the repository, the extensi
 
 #### 3. Add the extension to your installation
 
-1. clone (or download) this repository to your local machine
+1. clone (or download) this repository to your local machine - alternatively you can [install the package](https://www.npmjs.com/package/@bix-digital/directus-extension-version-control-changelog) from npm and run the following next steps in the folder of the module
 1. open a terminal and change into the directory containing the `package.json`
 1. run `npm install`
 1. run `npm run build`
@@ -104,6 +104,6 @@ These are things that would make sense, but it is not granted that it will be im
 - [ ] support "auto-create" of the required collection(s) and field(s) on first run
 - [ ] allow multiple changelogs (multiple collections writing to multiple repositories)
 - [ ] add GitHub and / or GitLab as target systems
-- [x] add to npm (to allow [installation via npm](https://directus.io/road-map/#q1-2022) once it is available)
+- [x] [added to npm](https://www.npmjs.com/package/@bix-digital/directus-extension-version-control-changelog) (to allow [installation via npm](https://directus.io/road-map/#q1-2022) once it is available)
   - [ ] confirm it works or do required adjustments once available
 - [ ] add to the [Extension Marketplace]((https://directus.io/road-map/#q2-2022)) once it is available
