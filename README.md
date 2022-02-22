@@ -27,6 +27,8 @@ That is why we decided to maintain a changelog inside of the VCS that can be upd
 			- [3. Add the extension to your installation](#3-add-the-extension-to-your-installation)
 			- [4. Add your first changelog entry](#4-add-your-first-changelog-entry)
 	- [Release History](#release-history)
+		- [Version 0.8.1](#version-081)
+		- [Version 0.8.0](#version-080)
 	- [Future possibilities](#future-possibilities)
 
 ## How can I use it?
@@ -95,7 +97,18 @@ If you see it: congratulations, your setup works!
 
 ## Release History
 
-- [Version 0.8.0](https://github.com/BIX-Digital/directus-version-control-changelog/releases/tag/v0.8.0) / 2022-02-14 -> initial release for Bitbucket
+### [Version 0.8.1](https://github.com/BIX-Digital/directus-version-control-changelog/releases/tag/v0.8.1)
+
+2022-02-22
+
+- fixing a bug where a hardcoded field name (not respecting the settings) causes a crash
+- improved prefix of extension in logger messages
+
+### [Version 0.8.0](https://github.com/BIX-Digital/directus-version-control-changelog/releases/tag/v0.8.0)
+
+2022-02-14
+
+- initial release for Bitbucket
 
 ## Future possibilities
 
