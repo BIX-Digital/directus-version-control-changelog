@@ -100,7 +100,7 @@ export default class ChangelogWriter {
 		const changeUserId = this.extractUserId(userDetails[0]);
 		const date = new Date().toLocaleString('en-GB', { hour12: false, timeZone: 'UTC', timeZoneName: 'short' });
 		const changeContent = event.payload[this.extensionConfig.fieldName];
-		if (event.payload[this.extensionConfig.fieldName] !== undefined) {
+		if (changeContent !== undefined) {
 			const newData = ChangelogFormatter.formatLatestChanges(changeContent,`## ${date} by ${changeUserId}`);
 			const commitMsg = `Content update from Directus CMS by ${changeUserId}`;
 			// do the actual execution
