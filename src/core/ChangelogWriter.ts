@@ -99,11 +99,18 @@ export default class ChangelogWriter {
 
 		const changeUserId = this.extractUserId(userDetails[0]);
 		const date = new Date().toLocaleString('en-GB', { hour12: false, timeZone: 'UTC', timeZoneName: 'short' });
-		const newData = ChangelogFormatter.formatLatestChanges(event.payload.changes,`## ${date} by ${changeUserId}`);
-		const commitMsg = `Content update from Directus CMS by ${changeUserId}`;
-
-		// do the actual execution
-		this.vcsAbstraction.addToChangelogFile(newData, commitMsg);
+		const changeContent = event.payload[this.extensionConfig.fieldName];
+		if (event.payload[this.extensionConfig.fieldName] !== undefined) {
+			const newData = ChangelogFormatter.formatLatestChanges(changeContent,`## ${date} by ${changeUserId}`);
+			const commitMsg = `Content update from Directus CMS by ${changeUserId}`;
+			// do the actual execution
+			this.vcsAbstraction.addToChangelogFile(newData, commitMsg);
+		} else {
+			// it seems there is a change in the monitored collection, but not in the field we're looking at
+			// so we warn the admin that something that might be not intended is possible
+			this.loggerReference.logMessage(LogLevels.warn,
+				'Things in the changelog collection changed, but not in the monitored field. Make sure this is wanted behavior...');
+		}
 
 	}
 
