@@ -18,7 +18,7 @@ export default class ExtensionLogger {
 		// using "name" to have it before the message itself based on the used formatter
 		// --> see https://github.com/directus/directus/blob/ee7e678f24fd85846798bc3cc1af3103e728ebb7/api/src/logger.ts#L18
 		// and https://www.npmjs.com/package/pino-colada
-		this.loggerReference = directusLogger.child({name: 'Version Control Changelog Extension'});
+		this.loggerReference = directusLogger.child({name: 'Version Control Changelog Extension >'});
 	}
 
 	/**
